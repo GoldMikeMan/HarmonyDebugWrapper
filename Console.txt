@@ -1,0 +1,125 @@
+PS C:\Users\mhole\source\repos\Calc> WrapHDL --scanFolderStructure
+🔍 Scanning folder structure starting at C:\Users\mhole\source\repos...
+✅ Repo map cached to: C:\Users\mhole\AppData\Roaming\WrapHDL\RepoMap.json
+PS C:\Users\mhole\source\repos\Calc> WrapHDL
+📦 Loaded cached repo map from: C:\Users\mhole\AppData\Roaming\WrapHDL\RepoMap.json
+🕓 Repo map last updated: 28/11/2025 09:37:09
+📁 Repo root: C:\Users\mhole\source\repos
+📦 Logger: C:\Users\mhole\source\repos\HarmonyDebugLogger\HarmonyDebugLogger\HarmonyDebugLogger.cs
+🎯 Target solution: C:\Users\mhole\source\repos\Calc\Calc.slnx
+❌ Failed to compile logger:
+(1,7): error CS0246: The type or namespace name 'HarmonyLib' could not be found (are you missing a using directive or an assembly reference?)
+(2,7): error CS0246: The type or namespace name 'Mono' could not be found (are you missing a using directive or an assembly reference?)
+(3,7): error CS0246: The type or namespace name 'Mono' could not be found (are you missing a using directive or an assembly reference?)
+(32,40): warning CS8632: The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
+(32,77): warning CS8632: The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
+(226,41): error CS0246: The type or namespace name 'TypeDefinition' could not be found (are you missing a using directive or an assembly reference?)
+(259,50): error CS0246: The type or namespace name 'ScopeDebugInformation' could not be found (are you missing a using directive or an assembly reference?)
+(259,79): error CS0246: The type or namespace name 'Dictionary<,>' could not be found (are you missing a using directive or an assembly reference?)
+(271,70): error CS0246: The type or namespace name 'IEnumerable<>' could not be found (are you missing a using directive or an assembly reference?)
+(271,82): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(271,24): error CS0246: The type or namespace name 'IEnumerable<>' could not be found (are you missing a using directive or an assembly reference?)
+(271,36): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(406,30): warning CS8632: The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
+(422,44): error CS0246: The type or namespace name 'Type' could not be found (are you missing a using directive or an assembly reference?)
+(15,24): error CS0246: The type or namespace name 'Harmony' could not be found (are you missing a using directive or an assembly reference?)
+(16,24): error CS0246: The type or namespace name 'StreamWriter' could not be found (are you missing a using directive or an assembly reference?)
+(19,30): warning CS8632: The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
+(21,24): error CS0246: The type or namespace name 'Dictionary<,>' could not be found (are you missing a using directive or an assembly reference?)
+(22,24): error CS0246: The type or namespace name 'Dictionary<,>' could not be found (are you missing a using directive or an assembly reference?)
+(495,20): error CS0246: The type or namespace name 'List<>' could not be found (are you missing a using directive or an assembly reference?)
+(496,20): error CS0246: The type or namespace name 'Dictionary<,>' could not be found (are you missing a using directive or an assembly reference?)
+(21,72): error CS0246: The type or namespace name 'Dictionary<,>' could not be found (are you missing a using directive or an assembly reference?)
+(22,82): error CS0246: The type or namespace name 'Dictionary<,>' could not be found (are you missing a using directive or an assembly reference?)
+(36,17): error CS0103: The name 'Console' does not exist in the current context
+(39,17): error CS0019: Operator '!=' cannot be applied to operands of type 'Harmony?' and '<null>'
+(52,73): error CS0103: The name 'Path' does not exist in the current context
+(52,86): error CS0103: The name 'Path' does not exist in the current context
+(54,37): error CS0103: The name 'Path' does not exist in the current context
+(54,50): error CS0103: The name 'Directory' does not exist in the current context
+(56,17): error CS0103: The name 'Directory' does not exist in the current context
+(58,34): error CS0103: The name 'Directory' does not exist in the current context
+(59,39): error CS0246: The type or namespace name 'DirectoryInfo' could not be found (are you missing a using directive or an assembly reference?)
+(60,52): error CS0103: The name 'DateTime' does not exist in the current context
+(61,32): error CS0103: The name 'Path' does not exist in the current context
+(64,30): error CS0246: The type or namespace name 'StreamWriter' could not be found (are you missing a using directive or an assembly reference?)
+(66,59): error CS0103: The name 'DateTime' does not exist in the current context
+(69,28): error CS0246: The type or namespace name 'Harmony' could not be found (are you missing a using directive or an assembly reference?)
+(70,13): error CS0246: The type or namespace name 'List<>' could not be found (are you missing a using directive or an assembly reference?)
+(70,52): error CS0246: The type or namespace name 'List<>' could not be found (are you missing a using directive or an assembly reference?)
+(84,28): error CS0246: The type or namespace name 'Exception' could not be found (are you missing a using directive or an assembly reference?)
+(110,72): error CS0246: The type or namespace name 'HarmonyMethod' could not be found (are you missing a using directive or an assembly reference?)
+(110,109): error CS0246: The type or namespace name 'HarmonyMethod' could not be found (are you missing a using directive or an assembly reference?)
+(110,46): error CS1061: 'Harmony?' does not contain a definition for 'Patch' and no accessible extension method 'Patch' accepting a first argument of type 'Harmony?' could be found (are you missing a using directive or an assembly reference?)
+(115,76): error CS0246: The type or namespace name 'HarmonyMethod' could not be found (are you missing a using directive or an assembly reference?)
+(115,46): error CS1061: 'Harmony?' does not contain a definition for 'Patch' and no accessible extension method 'Patch' accepting a first argument of type 'Harmony?' could be found (are you missing a using directive or an assembly reference?)
+(119,36): error CS0246: The type or namespace name 'Exception' could not be found (are you missing a using directive or an assembly reference?)
+(127,24): error CS0246: The type or namespace name 'Exception' could not be found (are you missing a using directive or an assembly reference?)
+(142,20): error CS0246: The type or namespace name 'Exception' could not be found (are you missing a using directive or an assembly reference?)
+(144,17): error CS0103: The name 'Console' does not exist in the current context
+(153,20): error CS0246: The type or namespace name 'Exception' could not be found (are you missing a using directive or an assembly reference?)
+(155,17): error CS0103: The name 'Console' does not exist in the current context
+(165,17): error CS0103: The name 'Console' does not exist in the current context
+(170,59): error CS0103: The name 'DateTime' does not exist in the current context
+(174,35): error CS0246: The type or namespace name 'Thread' could not be found (are you missing a using directive or an assembly reference?)
+(193,39): error CS0103: The name 'Console' does not exist in the current context
+(193,77): error CS0103: The name 'Path' does not exist in the current context
+(201,60): error CS0103: The name 'File' does not exist in the current context
+(202,44): error CS0246: The type or namespace name 'ReaderParameters' could not be found (are you missing a using directive or an assembly reference?)
+(205,48): error CS0246: The type or namespace name 'DefaultSymbolReaderProvider' could not be found (are you missing a using directive or an assembly reference?)
+(207,49): error CS0103: The name 'AssemblyDefinition' does not exist in the current context
+(221,20): error CS0246: The type or namespace name 'Exception' could not be found (are you missing a using directive or an assembly reference?)
+(234,42): error CS0246: The type or namespace name 'List<>' could not be found (are you missing a using directive or an assembly reference?)
+(235,42): error CS0246: The type or namespace name 'Dictionary<,>' could not be found (are you missing a using directive or an assembly reference?)
+(274,39): error CS0246: The type or namespace name 'List<>' could not be found (are you missing a using directive or an assembly reference?)
+(274,44): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(277,61): error CS1061: 'IList<LocalVariableInfo>' does not contain a definition for 'ToList' and no accessible extension method 'ToList' accepting a first argument of type 'IList<LocalVariableInfo>' could be found (are you missing a using directive or an assembly reference?)
+(277,78): error CS0246: The type or namespace name 'List<>' could not be found (are you missing a using directive or an assembly reference?)
+(280,77): warning CS8632: The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
+(284,37): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(285,37): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(295,45): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(296,45): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(298,63): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(299,50): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(307,27): warning CS8632: The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
+(311,49): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(312,49): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(313,49): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(313,80): error CS0103: The name 'Path' does not exist in the current context
+(314,49): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(328,80): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(329,85): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(330,85): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(331,85): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(332,87): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(333,66): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(335,94): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(336,61): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(337,61): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(353,29): error CS0246: The type or namespace name 'Type' could not be found (are you missing a using directive or an assembly reference?)
+(360,78): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(361,83): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(362,83): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(363,83): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(364,85): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(365,66): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(370,96): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(371,102): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(372,103): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(373,104): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(374,102): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(375,103): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(376,99): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(377,70): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(380,89): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(382,61): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(383,61): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(401,41): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(402,41): error CS0246: The type or namespace name 'CodeInstruction' could not be found (are you missing a using directive or an assembly reference?)
+(410,38): error CS0103: The name 'Path' does not exist in the current context
+(413,26): error CS0103: The name 'File' does not exist in the current context
+(414,29): error CS0103: The name 'File' does not exist in the current context
+(489,43): error CS0103: The name 'DateTime' does not exist in the current context
+(495,79): error CS0246: The type or namespace name 'List<>' could not be found (are you missing a using directive or an assembly reference?)
+(496,79): error CS0246: The type or namespace name 'Dictionary<,>' could not be found (are you missing a using directive or an assembly reference?)

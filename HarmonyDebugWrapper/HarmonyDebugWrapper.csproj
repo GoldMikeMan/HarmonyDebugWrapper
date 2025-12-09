@@ -10,7 +10,7 @@
 	<PackageId>WrapHDL</PackageId>
     <Authors>GoldMike</Authors>
     <Description>Wraps C# projects with Harmony Debug Logger for runtime instrumentation.</Description>
-    <Version>1.0.10</Version>
+    <Version>1.0.21</Version>
 	<PackageOutputPath>./bin/release/nupkg</PackageOutputPath>
   </PropertyGroup>
   <ItemGroup>

@@ -1,5 +1,7 @@
 ﻿using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Diagnostics;
+using System.Security.Cryptography;
 class HarmonyDebugWrapper
 {
     static int Main(string[] args)
@@ -10,9 +12,35 @@ class HarmonyDebugWrapper
             RepoMap.MapRepoFolderStructure();
             return 0;
         }
-        if (args.Contains("--update", StringComparer.Ordinal))
+        if (args.Contains("--updateMajor", StringComparer.Ordinal))
         {
             try
+            {
+                Update.UpdateWrapper(major: true, minor: false);
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Update failed: {ex.Message}");
+                return 1;
+            }
+        }
+            if (args.Contains("--updateMinor", StringComparer.Ordinal))
+            {
+                try
+                {
+                    Update.UpdateWrapper(major: false, minor: true);
+                    return 0;
+                }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Update failed: {ex.Message}");
+                return 1;
+            }
+        }
+        if (args.Contains("--update", StringComparer.Ordinal))
+        {
+                try
             {
                 Update.UpdateWrapper();
                 return 0;
@@ -167,7 +195,7 @@ class RepoMap
 }
 class Update()
 {
-    public static void UpdateWrapper()
+    public static void UpdateWrapper(bool major = false, bool minor = false)
     {
         var exe = System.Reflection.Assembly.GetExecutingAssembly().Location;
         var dir = Path.GetDirectoryName(exe)!;
@@ -214,22 +242,21 @@ class Update()
                 catch { throw new Exception("Could not locate HarmonyDebugWrapper.csproj."); }
             }
         }
-        Console.WriteLine("🔄 Rebuilding and updating WrapHDL...");
         if (projectDir is null) throw new InvalidOperationException("⚠️ Project directory not found.");
-        var srcFiles = Directory.GetFiles(projectDir, "*.cs", SearchOption.AllDirectories);
-        var latestSrcTime = srcFiles.Select(File.GetLastWriteTimeUtc).OrderByDescending(t => t).FirstOrDefault();
+        var currentHash = ComputeProjectHash(projectDir);
+        var hashFile = Path.Combine(projectDir, ".lastbuildhash");
+        string? lastHash = File.Exists(hashFile) ? File.ReadAllText(hashFile).Trim() : null;
         var nupkgPath = Path.Combine(projectDir, "bin", "release", "nupkg");
         var latestNupkg = Directory.Exists(nupkgPath) ? Directory.GetFiles(nupkgPath, "*.nupkg").OrderByDescending(File.GetLastWriteTimeUtc).FirstOrDefault() : null;
-        if (latestNupkg != null)
+        Console.WriteLine("Hashing current build");
+
+        Console.WriteLine("⚖️Comparing current hash to new build hash...");
+        if (lastHash == currentHash)
         {
-            var nupkgTime = File.GetLastWriteTimeUtc(latestNupkg);
-            if (latestSrcTime <= nupkgTime)
-            {
-                Console.WriteLine($"⚙️ No source changes since last build ({nupkgTime:HH:mm:ss}). Skipping rebuild and version bump.");
-                Console.WriteLine($"✅ WrapHDL is already up-to-date at version {Path.GetFileNameWithoutExtension(latestNupkg)}.");
-                return;
-            }
+            Console.WriteLine($"✅ WrapHDL is already up-to-date at version {Path.GetFileNameWithoutExtension(latestNupkg)}.");
+            return;
         }
+        Console.WriteLine("🔄 Rebuilding and updating WrapHDL...");
         var csprojPath = Path.Combine(projectDir, "HarmonyDebugWrapper.csproj");
         var csprojText = File.ReadAllText(csprojPath);
         var match = System.Text.RegularExpressions.Regex.Match(csprojText, @"<Version>(.*?)</Version>");
@@ -237,9 +264,27 @@ class Update()
         {
             var oldVersion = match.Groups[1].Value.Trim();
             var parts = oldVersion.Split('.');
-            if (parts.Length == 3 && int.TryParse(parts[2], out var patch))
+            if (parts.Length == 3 && int.TryParse(parts[0], out var majorNum) && int.TryParse(parts[1], out var minorNum) && int.TryParse(parts[2], out var patchNum))
             {
-                var newVersion = $"{parts[0]}.{parts[1]}.{patch + 1}";
+                string newVersion;
+                if (major)
+                {
+                    majorNum += 1;
+                    minorNum = 0;
+                    patchNum = 0;
+                    newVersion = $"{majorNum}.{minorNum}.{patchNum}";
+                }
+                if (minor)
+                {
+                    minorNum += 1;
+                    patchNum = 0;
+                    newVersion = $"{majorNum}.{minorNum}.{patchNum}";
+                }
+                else
+                {
+                    patchNum += 1;
+                    newVersion = $"{majorNum}.{minorNum}.{patchNum}";
+                }
                 csprojText = csprojText.Replace($"<Version>{oldVersion}</Version>", $"<Version>{newVersion}</Version>");
                 File.WriteAllText(csprojPath, csprojText);
                 Console.WriteLine($"⚙️ Incremented version: {oldVersion} → {newVersion}");
@@ -251,36 +296,70 @@ class Update()
         var nupkg = Directory.GetFiles(Path.Combine(projectDir, "bin", "release", "nupkg"), "*.nupkg").OrderByDescending(File.GetLastWriteTime).FirstOrDefault();
         if (nupkg == null) throw new Exception("No package found after packing.");
         var pkgDir = Path.GetDirectoryName(nupkg)!;
+        var psExe = EnsurePwshInstalled();
         var psScript = $"[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Start-Sleep -Seconds 1; Write-Host '🔄 Updating WrapHDL...'; dotnet tool update --global --add-source '{pkgDir}' WrapHDL; if ($LASTEXITCODE -eq 0) {{ Write-Host '✅ WrapHDL successfully updated to latest build at {DateTime.Now:HH:mm:ss}'; WrapHDL --scanFolderStructure; }} else {{ Write-Host '❌ WrapHDL update failed with exit code $LASTEXITCODE'; }} Remove-Item -Path $MyInvocation.MyCommand.Definition -Force;";
         var tempScript = Path.Combine(Path.GetTempPath(), "WrapHDL_Update.ps1");
         File.WriteAllText(tempScript, psScript, System.Text.Encoding.UTF8);
-        Console.WriteLine("🚀 Launching PowerShell in current terminal to perform update...");
-        string psExe;
-        try
+        Console.WriteLine("🚀 Launching PowerShell 7 in current terminal to perform update...");
+        var psi = new ProcessStartInfo(psExe, $"-NoExit -ExecutionPolicy Bypass -Command \"& {{ . '{tempScript}' }}\"")
         {
-            var pwshCheck = new ProcessStartInfo
-            {
-                FileName = "where",
-                Arguments = "pwsh",
-                RedirectStandardOutput = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-            using var whereProc = Process.Start(pwshCheck);
-            whereProc!.WaitForExit(1000);
-            psExe = whereProc.ExitCode == 0 ? "pwsh" : "powershell";
+            UseShellExecute = false,
+            RedirectStandardOutput = false,
+            RedirectStandardError = false,
+            CreateNoWindow = false,
+            WorkingDirectory = Environment.CurrentDirectory
+        };
+        Process.Start(psi);
+        Console.WriteLine("🚪 Exiting current instance to allow update...");
+        Environment.Exit(0);
+    }
+    static string ComputeProjectHash(string projectDir)
+    {
+        using var sha = SHA256.Create();
+        var files = Directory.GetFiles(projectDir, "*.cs", SearchOption.AllDirectories).OrderBy(f => f); // Ensure deterministic order
+        foreach (var file in files)
+        {
+            var content = File.ReadAllBytes(file);
+            sha.TransformBlock(content, 0, content.Length, null, 0);
         }
-        catch { psExe = "powershell"; }
-        Console.WriteLine($"🚀 Launching update via {(psExe == "pwsh" ? "PowerShell 7" : "PowerShell 5")}...");
-        var psi = new ProcessStartInfo(psExe, $"-NoExit -ExecutionPolicy Bypass -File \"{tempScript}\"")
+        sha.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+        return BitConverter.ToString(sha.Hash!).Replace("-", "").ToLowerInvariant();
+    }
+    static string EnsurePwshInstalled()
+    {
+        var pwshPath = @"C:\Program Files\PowerShell\7-preview\pwsh.exe";
+        if (pwshPath != null)
+        {
+            Console.WriteLine($"✅ Found PowerShell 7 at: {pwshPath}");
+            return pwshPath;
+        }
+        Console.WriteLine("⚠️ PowerShell 7 not found. Installing via WinGet...");
+        var psi = new ProcessStartInfo("winget", "install --id Microsoft.Powershell.Preview --source winget --accept-source-agreements --accept-package-agreements -h")
         {
             UseShellExecute = false,
             RedirectStandardOutput = false,
             RedirectStandardError = false,
             CreateNoWindow = false
         };
-        Process.Start(psi);
-        Console.WriteLine("🚪 Exiting current instance to allow update...");
-        Environment.Exit(0);
+        using var proc = Process.Start(psi);
+        if (proc == null)
+        {
+            Console.WriteLine("❌ Failed to start PowerShell 7 installation process (Process.Start returned null).");
+            throw new Exception("Failed to start PowerShell 7 installation process.");
+        }
+        proc.WaitForExit();
+        if (proc.ExitCode != 0)
+        {
+            Console.WriteLine("❌ Failed to install PowerShell 7 via WinGet. Please install manually.");
+            throw new Exception("PowerShell 7 installation failed.");
+        }
+        Console.WriteLine("✅ PowerShell 7 installed successfully.");
+        pwshPath = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator).Select(p => Path.Combine(p, "pwsh.exe")).FirstOrDefault(File.Exists);
+        if (pwshPath == null)
+        {
+            Console.WriteLine("❌ PowerShell 7 installation completed, but pwsh.exe not found in PATH.");
+            throw new Exception("pwsh not found after installation.");
+        }
+        return pwshPath;
     }
 }

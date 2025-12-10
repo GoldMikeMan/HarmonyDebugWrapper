@@ -1,7 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+	<AssemblyName>WrapHDL</AssemblyName>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
+	<LangVersion>14</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 	<PackAsTool>true</PackAsTool>
@@ -10,7 +12,7 @@
 	<PackageId>WrapHDL</PackageId>
     <Authors>GoldMike</Authors>
     <Description>Wraps C# projects with Harmony Debug Logger for runtime instrumentation.</Description>
-    <Version>1.0.21</Version>
+    <Version>1.0.28</Version>
 	<PackageOutputPath>./bin/release/nupkg</PackageOutputPath>
   </PropertyGroup>
   <ItemGroup>

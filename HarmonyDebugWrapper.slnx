@@ -1,3 +1,5 @@
 <Solution>
-  <Project Path="HarmonyDebugWrapper/HarmonyDebugWrapper.csproj" />
+  <Project Path="HarmonyDebugWrapper/HarmonyDebugWrapper.csproj">
+    <BuildType Project="Release" />
+  </Project>
 </Solution>

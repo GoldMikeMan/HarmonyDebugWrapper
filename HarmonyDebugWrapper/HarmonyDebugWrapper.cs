@@ -6,6 +6,8 @@ class HarmonyDebugWrapper
     static int Main(string[] args)
     {
         Console.OutputEncoding = System.Text.Encoding.UTF8;
+        Console.WriteLine("🔍 Checking terminal environment...");
+        PowerShell();
         if (args.Contains("--scanFolderStructure", StringComparer.Ordinal))
         {
             RepoMap.MapRepoFolderStructure();
@@ -15,7 +17,8 @@ class HarmonyDebugWrapper
         {
             try
             {
-                Update.UpdateWrapper(major: true, minor: false);
+                if (args.Contains("--forceUpdate", StringComparer.Ordinal)) Update.UpdateWrapper(major: true, minor: false, forceUpdate: true);
+                else Update.UpdateWrapper(major: true, minor: false);
                 return 0;
             }
             catch (Exception ex)
@@ -28,7 +31,8 @@ class HarmonyDebugWrapper
         {
             try
             {
-                Update.UpdateWrapper(major: false, minor: true);
+                if (args.Contains("--forceUpdate", StringComparer.Ordinal)) Update.UpdateWrapper(major: false, minor: true, forceUpdate: true);
+                else Update.UpdateWrapper(major: false, minor: true);
                 return 0;
             }
             catch (Exception ex)
@@ -41,7 +45,8 @@ class HarmonyDebugWrapper
         {
             try
             {
-                Update.UpdateWrapper();
+                if (args.Contains("--forceUpdate", StringComparer.Ordinal)) Update.UpdateWrapper(forceUpdate: true);
+                else Update.UpdateWrapper();
                 return 0;
             }
             catch (Exception ex)
@@ -153,6 +158,167 @@ class HarmonyDebugWrapper
         }
         throw new Exception("❌ No solution or project file found.");
     }
+    static void PowerShell()
+    {
+        try
+        {
+            var psi = new ProcessStartInfo("pwsh", "-Command \"$PSVersionTable.PSVersion.ToString()\"")
+            {
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using var proc = Process.Start(psi);
+            string output = proc.StandardOutput.ReadToEnd().Trim();
+            proc.WaitForExit();
+
+            if (!string.IsNullOrWhiteSpace(output))
+            {
+                Console.WriteLine($"🖥️ Terminal: PowerShell 7 — Version {output}");
+                var pwshVersion = output.Replace("preview.", ".", StringComparison.OrdinalIgnoreCase).Replace("preview", ".", StringComparison.OrdinalIgnoreCase).Replace("rc.", ".", StringComparison.OrdinalIgnoreCase).Replace("rc", ".", StringComparison.OrdinalIgnoreCase).Trim();
+                var parts = Regex.Matches(pwshVersion, @"\d+").Select(m => m.Value).ToList();
+                while (parts.Count < 4) parts.Add("0");
+                string.Join('.', parts.Take(4));
+                Console.WriteLine($"⚙️ Normalized version: {pwshVersion}");
+                psi = new ProcessStartInfo("winget", "search Microsoft.PowerShell.Preview")
+                {
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                using var wingetProc = Process.Start(psi);
+                string wingetOutput = wingetProc.StandardOutput.ReadToEnd();
+                wingetProc.WaitForExit();
+                var match = Regex.Match(wingetOutput, @"Microsoft\.PowerShell\.Preview\s+([\d\.]+)\s");
+                if (match.Success)
+                {
+                    var wingetVersion = match.Groups[1].Value.Trim();
+                    var wingetParts = Regex.Matches(wingetVersion, @"\d+").Select(m => m.Value).ToList();
+                    while (wingetParts.Count < 4) wingetParts.Add("0");
+                    wingetVersion = string.Join('.', wingetParts.Take(4));
+                    Console.WriteLine($"📦 Winget PowerShell Preview version: {wingetVersion}");
+                    if (CompareVersions(wingetVersion, pwshVersion) > 0)
+                    {
+                        Console.WriteLine($"🔄 Updating PowerShell 7 Preview from {pwshVersion} → {wingetVersion}...");
+                        var updateProc = Process.Start(new ProcessStartInfo("winget", "upgrade --id Microsoft.PowerShell.Preview -e --source winget --accept-source-agreements --accept-package-agreements -h")
+                        {
+                            UseShellExecute = false,
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true,
+                            CreateNoWindow = false
+                        }) ?? throw new Exception("❌ Failed to start Winget update process.");
+                        updateProc.WaitForExit();
+                        if (updateProc.ExitCode == 0) Console.WriteLine($"✅ Updated PowerShell 7 Preview to {wingetVersion} successfully.");
+                        else Console.WriteLine($"❌ PowerShell 7 Preview update failed with code {updateProc.ExitCode}.");
+                    }
+                    else Console.WriteLine("✅ PowerShell 7 Preview is already up to date.");
+                    return;
+                }
+                else
+                {
+                    Console.WriteLine("⚠️ Could not determine latest PowerShell version from Winget search.");
+                    return;
+                }
+
+            }
+        }
+        catch { /* ignored */ }
+        try
+        {
+            var psi = new ProcessStartInfo("powershell", "-Command \"$PSVersionTable.PSVersion.ToString()\"")
+            {
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using var proc = Process.Start(psi);
+            string output = proc.StandardOutput.ReadToEnd().Trim();
+            proc.WaitForExit();
+
+            if (!string.IsNullOrWhiteSpace(output))
+            {
+                Console.WriteLine($"🖥️ Terminal: Windows PowerShell 5 — Version {output}");
+                SearchAndInstallPowerShell7();
+                return;
+            }
+        }
+        catch { /* ignored */ }
+        if (Environment.GetEnvironmentVariable("ComSpec")?.Contains("cmd.exe", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            Console.WriteLine("🖥️ Terminal: Command Prompt (cmd.exe)");
+            SearchAndInstallPowerShell7();
+            return;
+        }
+        Console.WriteLine("❌ No supported terminal detected (not PowerShell or CMD).");
+    }
+    static void SearchAndInstallPowerShell7()
+    {
+        Console.WriteLine("🔍 Searching for PowerShell 7 installation...");
+        string[] defaultPaths =
+        [
+            @"C:\Program Files\PowerShell\7-preview\pwsh.exe",
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "PowerShell", "7-preview", "pwsh.exe")
+        ];
+        string? pwshPath = defaultPaths.FirstOrDefault(File.Exists);
+        if (pwshPath != null)
+        {
+            Console.WriteLine($"✅ Found PowerShell 7 installation at: {pwshPath}");
+            RelaunchInPowerShell7(pwshPath);
+            return;
+        }
+        Console.WriteLine("⚠️ PowerShell 7 not found. Installing preview build via Winget...");
+        var installProc = Process.Start(new ProcessStartInfo("winget", "install --id Microsoft.PowerShell.Preview -e --source winget --accept-source-agreements --accept-package-agreements -h")
+        {
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = false
+        }) ?? throw new Exception("❌ Failed to start Winget install process.");
+        installProc.WaitForExit();
+        if (installProc.ExitCode == 0)
+        {
+            Console.WriteLine("✅ Installed PowerShell 7 Preview successfully.");
+            pwshPath = defaultPaths.FirstOrDefault(File.Exists);
+            if (pwshPath != null)
+            {
+                RelaunchInPowerShell7(pwshPath);
+                return;
+            }
+            Console.WriteLine("⚠️ PowerShell 7 installation complete, but executable not found in default paths.");
+        }
+        else Console.WriteLine($"❌ PowerShell 7 Preview install failed with code {installProc.ExitCode}.");
+    }
+    static void RelaunchInPowerShell7(string pwshPath)
+    {
+        var exePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+        var argsJoined = string.Join(' ', Environment.GetCommandLineArgs().Skip(1));
+        Console.WriteLine($"🚀 Relaunching in PowerShell 7: {pwshPath}");
+        var psi = new ProcessStartInfo(pwshPath, $"-ExecutionPolicy Bypass -NoLogo -Command \"& '{exePath}' {argsJoined}\"")
+        {
+            UseShellExecute = true,
+            CreateNoWindow = false,
+            WorkingDirectory = Environment.CurrentDirectory
+        };
+        Process.Start(psi);
+        Console.WriteLine("🚪 Exiting current instance to allow PowerShell 7 to take over...");
+        Environment.Exit(0);
+    }
+    static int CompareVersions(string v1, string v2)
+    {
+        var p1 = v1.Split('.').Select(int.Parse).ToArray();
+        var p2 = v2.Split('.').Select(int.Parse).ToArray();
+        for (int i = 0; i < Math.Max(p1.Length, p2.Length); i++)
+        {
+            int a = i < p1.Length ? p1[i] : 0;
+            int b = i < p2.Length ? p2[i] : 0;
+            if (a > b) return 1;
+            if (a < b) return -1;
+        }
+        return 0;
+    }
 }
 class RepoMap
 {
@@ -198,7 +364,7 @@ class RepoMap
 }
 class Update
 {
-    public static void UpdateWrapper(bool major = false, bool minor = false)
+    public static void UpdateWrapper(bool major = false, bool minor = false, bool forceUpdate = false)
     {
         var exe = System.Reflection.Assembly.GetExecutingAssembly().Location;
         var dir = Path.GetDirectoryName(exe)!;
@@ -223,10 +389,7 @@ class Update
                         Console.WriteLine("🔍 Searching for HarmonyDebugWrapper.csproj under your home directory...");
                         foreach (var drive in new[] { home })
                         {
-                            try
-                            {
-                                matches.AddRange(Directory.GetFiles(drive, "HarmonyDebugWrapper.csproj", SearchOption.AllDirectories));
-                            }
+                            try { matches.AddRange(Directory.GetFiles(drive, "HarmonyDebugWrapper.csproj", SearchOption.AllDirectories)); }
                             catch (UnauthorizedAccessException) { /* skip restricted folders */ }
                             catch (Exception ex) { Console.WriteLine($"⚠️ Skipping folder during search: {ex.Message}"); }
                         }
@@ -237,10 +400,7 @@ class Update
                         projectDir = Path.GetDirectoryName(matches[0]);
                         Console.WriteLine($"📁 Found project at: {projectDir}");
                     }
-                    else
-                    {
-                        throw new Exception("❌ Could not locate HarmonyDebugWrapper.csproj anywhere in your home directory.");
-                    }
+                    else throw new Exception("❌ Could not locate HarmonyDebugWrapper.csproj anywhere in your home directory.");
                 }
                 catch { throw new Exception("Could not locate HarmonyDebugWrapper.csproj."); }
             }
@@ -249,25 +409,42 @@ class Update
         var csprojPath = Path.Combine(projectDir, "HarmonyDebugWrapper.csproj");
         var nupkgPath = Path.Combine(projectDir, "bin", "Release", "nupkg");
         var hashFile = Path.Combine(projectDir, ".lastbuildhash");
-        var latestNupkg = Directory.Exists(nupkgPath) ? Directory.GetFiles(nupkgPath, "*.nupkg").OrderByDescending(File.GetLastWriteTimeUtc).FirstOrDefault() : null;
-        Console.WriteLine("🔄 Hashing currently installed build");
-        var globalToolPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".dotnet", "tools", "WrapHDL.exe");
-        if (!File.Exists(globalToolPath)) throw new Exception($"❌ Could not find WrapHDL at {globalToolPath}");
-        var currentHash = ComputeFileHash(globalToolPath);
-        Console.WriteLine($"🔒 Currently installed version hash: {currentHash}");
+        var installedNupkg = Directory.EnumerateFiles(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".dotnet", "tools"), "WrapHDL*.nupkg", SearchOption.AllDirectories).OrderByDescending(File.GetLastWriteTimeUtc).FirstOrDefault() ?? throw new Exception("❌ No installed WrapHDL package found.");
+        Console.WriteLine("🔄 Hashing currently installed package...");
+        var currentHash = ComputeFileHash(installedNupkg);
+        Console.WriteLine($"🔒 Currently installed package hash: {currentHash}");
         string? oldVersion = null;
         string? newVersion = null;
         var csprojText = File.ReadAllText(csprojPath);
         try
         {
-            var match = GetVersionRegexHelper.VersionRegex().Match(csprojText);
+            if (forceUpdate) goto SkipHash;
+            Console.WriteLine("🏗️ Building and packing new version...");
+            HarmonyDebugWrapper.Run("dotnet", "build -c Release", projectDir);
+            HarmonyDebugWrapper.Run("dotnet", "pack -c Release", projectDir);
+            Console.WriteLine("📦 Build and pack complete.");
+            var nupkgDir = Path.Combine(projectDir, "bin", "Release", "nupkg");
+            if (!Directory.Exists(nupkgDir)) throw new Exception($"❌ .nupkg directory not found: {nupkgDir}");
+            var latestNupkg = Directory.GetFiles(nupkgDir, "*.nupkg", SearchOption.TopDirectoryOnly).OrderByDescending(File.GetLastWriteTimeUtc).FirstOrDefault() ?? throw new Exception("❌ No .nupkg file found after packing.");
+            Console.WriteLine($"📁 Latest nupkg package found: {Path.GetFileName(latestNupkg)} (modified {File.GetLastWriteTime(latestNupkg):HH:mm:ss})");
+            Console.WriteLine("🔄 Hashing new package...");
+            var newHash = ComputeFileHash(latestNupkg);
+            Console.WriteLine($"🔒 Newly built package hash: {newHash}");
+            Console.WriteLine("⚖️ Comparing current hash to new build hash...");
+            if (string.Equals(currentHash, newHash, StringComparison.Ordinal))
+            {
+                Console.WriteLine("🔁 WrapHDL is up to date. Packages are identical.");
+                Cleanup(projectDir, newVersion, oldVersion, csprojPath);
+                return;
+            }
+            Console.WriteLine("🆕 Changes detected — proceeding with update...");
+            File.Delete(latestNupkg);
+        SkipHash:
+            var match = RegexHelpers.VersionRegex().Match(csprojText);
             if (!match.Success) throw new Exception("⚠️ No <Version> tag found in .csproj.");
             oldVersion = match.Groups[1].Value.Trim();
             var parts = oldVersion.Split('.');
-            if (parts.Length != 3) throw new Exception($"⚠️ Invalid version format: {oldVersion}");
-            int.TryParse(parts[0], out var majorNum);
-            int.TryParse(parts[1], out var minorNum);
-            int.TryParse(parts[2], out var patchNum);
+            if (parts.Length != 3 || !int.TryParse(parts[0], out var majorNum) || !int.TryParse(parts[1], out var minorNum) || !int.TryParse(parts[2], out var patchNum)) throw new Exception($"⚠️ Invalid version format: {oldVersion}");
             if (major)
             {
                 majorNum++;
@@ -283,59 +460,58 @@ class Update
             csprojText = csprojText.Replace($"<Version>{oldVersion}</Version>", $"<Version>{newVersion}</Version>");
             File.WriteAllText(csprojPath, csprojText);
             Console.WriteLine($"⚙️ Incremented version: {oldVersion} → {newVersion}");
-            Console.WriteLine("🏗️ Building and packing new version...");
+            Console.WriteLine("🏗️ Building and packing incremented version...");
             HarmonyDebugWrapper.Run("dotnet", "build -c Release", projectDir);
             HarmonyDebugWrapper.Run("dotnet", "pack -c Release", projectDir);
-            Console.WriteLine("📦 Build and pack complete.");
-            var compiledExe = Path.Combine(projectDir, "bin", "Release", "net10.0", "HarmonyDebugWrapper.exe");
-            if (!File.Exists(compiledExe)) throw new Exception($"No compiled HarmonyDebugWrapper.exe build found at {compiledExe}");
-            Console.WriteLine("🔄 Hashing new build...");
-            var newHash = ComputeFileHash(compiledExe);
-            Console.WriteLine($"🔒 Newly built version hash: {newHash}");
-            Console.WriteLine("⚖️ Comparing current hash to new build hash...");
-            if (string.Equals(currentHash, newHash, StringComparison.Ordinal)) throw new Exception("✅ Identical hash match.");
         }
         catch (Exception ex)
         {
             Console.WriteLine($"❌ Update failed: {ex.Message}");
-            if (!string.IsNullOrEmpty(oldVersion) && !string.IsNullOrEmpty(newVersion))
-            {
-                var rollbackText = File.ReadAllText(csprojPath);
-                rollbackText = rollbackText.Replace($"<Version>{newVersion}</Version>", $"<Version>{oldVersion}</Version>");
-                File.WriteAllText(csprojPath, rollbackText);
-                Console.WriteLine($"↩️ Rolled back version bump: {newVersion} → {oldVersion}");
-            }
-            try
-            {
-                var releaseDir = Path.Combine(projectDir, "bin", "Release");
-                if (Directory.Exists(releaseDir))
-                {
-                    Directory.Delete(releaseDir, true);
-                    Console.WriteLine("🧹 Removed redundant build output.");
-                }
-            }
-            catch { Console.WriteLine("⚠️ Failed to delete build output during cleanup."); }
-            Console.WriteLine("🚫 Update aborted — no changes to apply.");
+            Cleanup(projectDir, newVersion, oldVersion, csprojPath);
             return;
         }
-        Console.WriteLine("🆕 Changes detected — proceeding with update...");
         var nupkg = Directory.GetFiles(nupkgPath, "*.nupkg").OrderByDescending(File.GetLastWriteTimeUtc).FirstOrDefault() ?? throw new Exception("No package found after packing.");
         var pkgDir = Path.GetDirectoryName(nupkg)!;
-        var psExe = EnsurePwshInstalled();
-        var psScript = $"[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; " + "Start-Sleep -Seconds 1; " + "Write-Host '🔄 Updating WrapHDL...'; " + $"dotnet tool update --global --add-source '{pkgDir}' WrapHDL; " + $"if ($LASTEXITCODE -eq 0) {{ Write-Host '✅ WrapHDL successfully updated to latest build at {DateTime.Now:HH:mm:ss}'; WrapHDL --scanFolderStructure; }} " + "else { Write-Host '❌ WrapHDL update failed with exit code $LASTEXITCODE'; } " + "Remove-Item -Path $MyInvocation.MyCommand.Definition -Force;";
+        int currentPid = Environment.ProcessId;
+        var psExe = @"C:\Program Files\PowerShell\7-preview\pwsh.exe";
+        var psScript = $"[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $pidToWait = {currentPid}; Write-Host \"⌛ Waiting for WrapHDL process PID=$pidToWait to exit...\"; while (Get-Process -Id $pidToWait -ErrorAction SilentlyContinue) {{ Start-Sleep -Milliseconds 200; }} Write-Host '✅ WrapHDL process exited. Proceeding with update...'; Write-Host '🔄 Updating WrapHDL...'; $cmd = \"dotnet tool update --global --add-source '{pkgDir}' WrapHDL\"; Write-Host \"🧠 Executing: $cmd\"; Invoke-Expression $cmd; if ($LASTEXITCODE -eq 0) {{ Write-Host '✅ WrapHDL successfully updated to latest build at {DateTime.Now:HH:mm:ss}'; Write-Host '📂 Running WrapHDL --scanFolderStructure...'; WrapHDL --scanFolderStructure; }} else {{ Write-Host \"❌ WrapHDL update failed with exit code $LASTEXITCODE\"; $proj = '{csprojPath}'; $old = '{oldVersion}'; $new = '{newVersion}'; $text = Get-Content $proj -Raw; $text = $text -replace \"<Version>$new</Version>\", \"<Version>$old</Version>\"; Set-Content $proj $text -Encoding UTF8; Write-Host \"↩️ Rolled back version to $old\"; }} Remove-Item -Path $MyInvocation.MyCommand.Definition -Force;";
         var tempScript = Path.Combine(Path.GetTempPath(), "WrapHDL_Update.ps1");
         File.WriteAllText(tempScript, psScript, System.Text.Encoding.UTF8);
-        Console.WriteLine("🚀 Launching PowerShell 7 inside current terminal...");
-        Console.WriteLine($"🧠 Executing:\n{psExe} -ExecutionPolicy Bypass -NoExit -File \"{tempScript}\"");
-        var updateCommand = $"Start-Process -FilePath '{psExe}' -ArgumentList '-ExecutionPolicy Bypass -NoExit -File \"{tempScript}\"' -Wait";
-        Process.Start(new ProcessStartInfo
+        Console.WriteLine("🚀 Launching PowerShell 7...");
+        Console.WriteLine($"🧠 Executing: {psExe} -ExecutionPolicy Bypass -NoLogo -File \"{tempScript}\"");
+        var psModulePath = Environment.GetEnvironmentVariable("PSModulePath") ?? string.Empty;
+        var psHome = Environment.GetEnvironmentVariable("PSHOME") ?? string.Empty;
+        var procName = Process.GetCurrentProcess().ProcessName;
+        var isPwsh = psModulePath.Contains("PowerShell\\7", StringComparison.OrdinalIgnoreCase) && psHome.Contains("PowerShell\\7", StringComparison.OrdinalIgnoreCase);
+        var isDevShell = procName.Contains("VsDevCmd", StringComparison.OrdinalIgnoreCase) || procName.Contains("VsDevShell", StringComparison.OrdinalIgnoreCase) || procName.Contains("devenv", StringComparison.OrdinalIgnoreCase);
+        var exePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+        var argsJoined = string.Join(' ', Environment.GetCommandLineArgs().Skip(1));
+        if (!isPwsh || isDevShell)
         {
-            FileName = "pwsh",
-            Arguments = $"-NoExit -Command \"{updateCommand}\"",
-            UseShellExecute = true
-        })?.WaitForExit();
-        Console.WriteLine("✅ Update process finished cleanly.");
-        return;
+            Console.WriteLine("⚙️ Not running in standalone PowerShell 7 — relaunching self in pwsh...");
+            var relaunchCmd = $"{psExe} -ExecutionPolicy Bypass -NoLogo -Command \"& '{exePath}' {argsJoined}\"";
+            var relaunch = new ProcessStartInfo("cmd.exe", $"/C \"{relaunchCmd}\"")
+            {
+                UseShellExecute = true,
+                CreateNoWindow = false,
+                WorkingDirectory = Environment.CurrentDirectory
+            };
+            Process.Start(relaunch);
+            Console.WriteLine("🚪 Exiting current instance so pwsh can take over...");
+            Environment.Exit(0);
+        }
+        else
+        {
+            var psi = new ProcessStartInfo(psExe, $"-ExecutionPolicy Bypass -NoLogo -File \"{tempScript}\"")
+            {
+                UseShellExecute = true,
+                CreateNoWindow = false,
+                WorkingDirectory = Environment.CurrentDirectory
+            };
+            Process.Start(psi);
+            Console.WriteLine("🚪 Exiting current instance to allow update...");
+            Environment.Exit(0);
+        }
     }
     private static string ComputeFileHash(string filePath)
     {
@@ -344,54 +520,38 @@ class Update
         var hash = sha.ComputeHash(stream);
         return Convert.ToHexString(hash);
     }
-    static string EnsurePwshInstalled()
+    private static void Cleanup(string projectDir, string? newVersion = null, string? oldVersion = null, string? csprojPath = null)
     {
-        var pwshPath = @"C:\Program Files\PowerShell\7-preview\pwsh.exe";
-        if (pwshPath != null)
+        Console.WriteLine("🧹 Performing cleanup...");
+        try
         {
-            Console.WriteLine($"✅ Found PowerShell 7 at: {pwshPath}");
-            return pwshPath;
-        }
-        Console.WriteLine("⚠️ PowerShell 7 not found. Installing via WinGet...");
-        var proc = Process.Start(new ProcessStartInfo("winget", "install --id Microsoft.Powershell.Preview -e --source winget --accept-source-agreements --accept-package-agreements -h")
-        {
-            RedirectStandardOutput = false,
-            RedirectStandardError = false,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        }) ?? throw new Exception("❌ Microsoft.PowerShell.Preview install failed.");
-        proc.WaitForExit();
-        if (proc.ExitCode != 0)
-        {
-            Console.WriteLine("⚠️ Microsoft.PowerShell.Preview not found. Attempting Microsoft.PowerShell instead...");
-            var fallback = Process.Start(new ProcessStartInfo("winget", "install --id Microsoft.PowerShell -e --source winget --accept-source-agreements --accept-package-agreements -h")
+            if (!string.IsNullOrEmpty(oldVersion) && !string.IsNullOrEmpty(newVersion) && !string.IsNullOrEmpty(csprojPath))
             {
-                RedirectStandardOutput = false,
-                RedirectStandardError = false,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            }) ?? throw new Exception("❌ Microsoft.PowerShell install failed.");
-            fallback.WaitForExit();
-            if (fallback.ExitCode != 0)
+                var rollbackText = File.ReadAllText(csprojPath);
+                rollbackText = rollbackText.Replace($"<Version>{newVersion}</Version>", $"<Version>{oldVersion}</Version>");
+                File.WriteAllText(csprojPath, rollbackText);
+                Console.WriteLine($"🔁 Restored version number: {newVersion} → {oldVersion}");
+            }
+            var nupkgDir = Path.Combine(projectDir, "bin", "Release");
+            if (Directory.Exists(nupkgDir))
             {
-                Console.WriteLine("❌ Failed to install PowerShell 7 via WinGet. Please install manually.");
-                throw new Exception("PowerShell 7 installation failed.");
+                var latestNupkg = Directory.GetFiles(nupkgDir, "*.nupkg", SearchOption.TopDirectoryOnly).OrderByDescending(File.GetLastWriteTimeUtc).FirstOrDefault();
+                if (latestNupkg != null)
+                {
+                    File.Delete(latestNupkg);
+                    Console.WriteLine($"🗑️ Deleted generated package: {Path.GetFileName(latestNupkg)}");
+                }
             }
         }
-        Console.WriteLine("✅ PowerShell 7 installed successfully.");
-        pwshPath = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator).Select(p => Path.Combine(p, "pwsh.exe")).FirstOrDefault(File.Exists);
-        if (pwshPath == null)
-        {
-            Console.WriteLine("❌ PowerShell 7 installation completed, but pwsh.exe not found in PATH.");
-            throw new Exception("pwsh.exe not found after installation.");
-        }
-        return pwshPath;
+        catch (Exception ex) { Console.WriteLine($"⚠️ Cleanup encountered an issue: {ex.Message}"); }
     }
 }
 #pragma warning disable CA1050
-public static partial class GetVersionRegexHelper
+public static partial class RegexHelpers
 {
     [GeneratedRegex("<Version>(.*?)</Version>", RegexOptions.Compiled | RegexOptions.CultureInvariant)]
     public static partial Regex VersionRegex();
+    [GeneratedRegex("(\\d+\\.\\d+\\.\\d+(?:\\.\\d+)?)", RegexOptions.Compiled | RegexOptions.CultureInvariant)]
+    public static partial Regex PwshVersionRegex();
 }
 #pragma warning restore CA1050

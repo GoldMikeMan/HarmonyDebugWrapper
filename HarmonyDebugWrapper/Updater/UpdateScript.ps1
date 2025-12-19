@@ -1,6 +1,6 @@
 ﻿param
 (
-    [bool]$skipVersion,
+    [switch]$skipVersion,
     [int]$pidToWait,
     [string]$pkgDir,
     [string]$csprojPath,
@@ -19,7 +19,7 @@ if ($LASTEXITCODE -eq 0)
     $timestamp = Get-Date -Format "dd-MM-yyyy HH:mm:ss"
     Write-Host "✅ WrapHDL successfully updated to latest build at $timestamp"
     Write-Host "📂 Running WrapHDL --scanFolderStructure..."
-    WrapHDL --scanFolderStructure
+    & WrapHDL --scanFolderStructure
 }
 else
 {
@@ -34,6 +34,3 @@ else
         Write-Host "↩️ Rolled back version to $oldVersion"
     }
 }
-Write-Host ""
-if (Test-Path Function:\prompt) { & (Get-Command prompt).ScriptBlock }
-else { Write-Host ("PS " + (Get-Location) + "> ") -NoNewLine }

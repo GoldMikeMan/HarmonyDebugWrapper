@@ -1,4 +1,5 @@
 ﻿using HarmonyDebugWrapper.Helpers;
+using HarmonyDebugWrapper.PowerShellIntegrator;
 using HarmonyDebugWrapper.Updater;
 using Microsoft.CodeAnalysis.CSharp;
 using System.Runtime.Versioning;
@@ -12,6 +13,8 @@ namespace HarmonyDebugWrapper
             Console.OutputEncoding = System.Text.Encoding.UTF8;
             Console.WriteLine("🔍 Checking terminal environment...");
             OtherHelpers.DetectTerminalType();
+            Console.WriteLine("🔍 Checking pwsh Integration...");
+            PwshIntegrator.EnsureShellIntegrationAndRestartIfUpdated(@"C:\Program Files\PowerShell\7-preview\pwsh.exe", args);
             if (args.Contains("--scanFolderStructure", StringComparer.Ordinal))
             {
                 RepoMap.MapRepoFolderStructure();

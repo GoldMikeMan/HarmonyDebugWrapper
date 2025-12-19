@@ -1,12 +1,13 @@
 ﻿using HarmonyDebugWrapper.Helpers;
-using System.Runtime.InteropServices;
+using HarmonyDebugWrapper.PowerShellIntegrator;
+using System.Diagnostics;
 using System.Runtime.Versioning;
 [assembly: SupportedOSPlatform("windows")]
 namespace HarmonyDebugWrapper.Updater
 {
     class Update
     {
-        public static void UpdateWrapper(bool major = false, bool minor = false, bool forceUpdate = false, bool skipVersion = false)
+        public static void UpdateWrapper(bool major = false, bool minor = false, bool forceUpdate = false, bool skipVersion = false, string? updaterPidFilePath = null)
         {
             var exe = System.Reflection.Assembly.GetExecutingAssembly().Location;
             var dir = Path.GetDirectoryName(exe)!;
@@ -126,10 +127,23 @@ namespace HarmonyDebugWrapper.Updater
             int currentPid = Environment.ProcessId;
             var psExe = @"C:\Program Files\PowerShell\7-preview\pwsh.exe";
             var updateScriptPath = Path.Combine(AppContext.BaseDirectory, "Updater", "UpdateScript.ps1");
-            var psArgs = $"-NoLogo -NoProfile -ExecutionPolicy Bypass -File \"{updateScriptPath}\" -skipVersion {skipVersion} -pidToWait {currentPid} -pkgDir \"{pkgDir}\" -csprojPath \"{csprojPath}\" -oldVersion \"{oldVersion}\" -newVersion \"{newVersion}\"";
-            var si = new NativeMethods.STARTUPINFO();
-            si.cb = Marshal.SizeOf(si);
-            var success = NativeMethods.CreateProcess(null, $"{psExe} {psArgs}", IntPtr.Zero, IntPtr.Zero, true, 0, IntPtr.Zero, Environment.CurrentDirectory, ref si, out NativeMethods.PROCESS_INFORMATION pi);
+            var psArgs = $"-NoLogo -NoProfile -ExecutionPolicy Bypass -File \"{updateScriptPath}\" {(skipVersion ? "-skipVersion " : "")} -pidToWait {currentPid} -pkgDir \"{pkgDir}\" -csprojPath \"{csprojPath}\" -oldVersion \"{oldVersion}\" -newVersion \"{newVersion}\"";
+            var psi = new ProcessStartInfo(psExe, psArgs)
+            {
+                UseShellExecute = false,
+                CreateNoWindow = false,
+                RedirectStandardOutput = false,
+                RedirectStandardError = false,
+                WorkingDirectory = Environment.CurrentDirectory
+            };
+            Console.WriteLine("🧠 Executing: UpdateScript.ps1");
+            var updaterProc = Process.Start(psi) ?? throw new Exception("❌ Failed to start UpdateScript PowerShell process.");
+            if (!string.IsNullOrWhiteSpace(updaterPidFilePath))
+            {
+                try { File.WriteAllText(updaterPidFilePath, updaterProc.Id.ToString()); }
+                catch (Exception ex) { Console.WriteLine($"⚠️ Failed to write updater pid file: {ex.Message}"); }
+            }
+            Console.Out.Flush();
             Environment.Exit(0);
         }
     }

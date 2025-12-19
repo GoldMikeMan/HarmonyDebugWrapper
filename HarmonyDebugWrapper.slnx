@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="../../../OneDrive - Verra Mobility/Documents/PowerShell/profile.ps1" />
+  </Folder>
   <Project Path="HarmonyDebugWrapper/HarmonyDebugWrapper.csproj">
     <BuildType Project="Release" />
   </Project>

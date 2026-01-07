@@ -18,19 +18,16 @@ if ($LASTEXITCODE -eq 0)
 {
     $timestamp = Get-Date -Format "dd-MM-yyyy HH:mm:ss"
     Write-Host "✅ WrapHDL successfully updated to latest build at $timestamp"
-    Write-Host "📂 Running WrapHDL --scanFolderStructure..."
-    & WrapHDL --scanFolderStructure
 }
 else
 {
     Write-Host "❌ WrapHDL update failed with exit code $LASTEXITCODE"
     if (-not $skipVersion)
     {
-        Write-Host "↩️ Rolling back project version..."
         $proj = $csprojPath
         $text = Get-Content $proj -Raw
         $text = $text -replace "<Version>$newVersion</Version>", "<Version>$oldVersion</Version>"
         Set-Content $proj $text -Encoding UTF8
-        Write-Host "↩️ Rolled back version to $oldVersion"
+        Write-Host "↩️ Restored version number: $newVersion → $oldVersion"
     }
 }

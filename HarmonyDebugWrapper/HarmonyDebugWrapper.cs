@@ -1,5 +1,5 @@
-﻿using HarmonyDebugWrapper.Helpers;
-using HarmonyDebugWrapper.Updater;
+﻿using HarmonyDebugWrapper.Updater;
+using HarmonyDebugWrapper.ToolBox;
 using Microsoft.CodeAnalysis.CSharp;
 using System.Runtime.Versioning;
 using System.Text;
@@ -12,52 +12,28 @@ namespace HarmonyDebugWrapper
         {
             Console.InputEncoding = Encoding.UTF8;
             Console.OutputEncoding = Encoding.UTF8;
-            Thread.Sleep(100);
-            if (!OtherHelpers.VerifyToolBoxHost()) return 1;
-            if (args.Contains("--help", StringComparer.Ordinal)) { OtherHelpers.PrintHelp(); return 0; }
-            if (args.Contains("--scanFolderStructure", StringComparer.Ordinal)) { RepoMap.MapRepoFolderStructure(); return 0; }
-            if (args.Contains("--updateMajor", StringComparer.Ordinal))
+            if (!ToolBoxHandshake.VerifyToolBoxHost()) return 1;
+            if (Update.TryHandleUpdateCommandTree(args, "WrapHDL", "HarmonyDebugWrapper.csproj", out var updateExitCode)) return updateExitCode;
+            bool hasHelp = args.Contains("--help", StringComparer.Ordinal);
+            bool hasScan = args.Contains("--scanFolderStructure", StringComparer.Ordinal);
+            if (hasHelp && hasScan) { Console.WriteLine("⚠️ Only one primary arg can be used at a time."); return 0; }
+            if (hasHelp)
             {
-                try
-                {
-                    if (args.Contains("--forceUpdate", StringComparer.Ordinal))
-                    {
-                        if (!args.Contains("--skipVersion", StringComparer.Ordinal)) Update.UpdateWrapper(major: true, minor: false, forceUpdate: true);
-                        else Update.UpdateWrapper(major: true, minor: false, forceUpdate: true, skipVersion: true);
-                    }
-                    else Update.UpdateWrapper(major: true, minor: false);
-                    return 0;
-                }
-                catch (Exception ex) { Console.WriteLine($"❌ Update failed: {ex.Message}"); return 1; }
+                Console.WriteLine("Commands:");
+                Console.WriteLine("  'WrapHDL'                             Tries to wrap HarmonyDebugLogger around C# project in current directory");
+                Console.WriteLine("Primary args:");
+                Console.WriteLine("  '--help'                              Print help to console.");
+                Console.WriteLine("  '--scanFolderStructure'               Scan repos and cache repo map.");
+                Console.WriteLine("  '--updateMajor [secondary] [tetiary]' Increment major version.");
+                Console.WriteLine("  '--updateMinor [secondary] [tetiary]' Increment minor version.");
+                Console.WriteLine("  '--update [secondary] [tetiary]'      Increment patch version.");
+                Console.WriteLine("Secondary args:");
+                Console.WriteLine("  '<primary> --forceUpdate [tertiary]'  Force rebuild/reinstall even if nothing changed. Requires an update primary arg.");
+                Console.WriteLine("Tertiary args:");
+                Console.WriteLine("  '<primary> <secondary> --skipVersion' Do not update version number. Requires --forceUpdate arg.");
+                return 0;
             }
-            if (args.Contains("--updateMinor", StringComparer.Ordinal))
-            {
-                try
-                {
-                    if (args.Contains("--forceUpdate", StringComparer.Ordinal))
-                    {
-                        if (!args.Contains("--skipVersion", StringComparer.Ordinal)) Update.UpdateWrapper(major: false, minor: true, forceUpdate: true);
-                        else Update.UpdateWrapper(major: false, minor: true, forceUpdate: true, skipVersion: true);
-                    }
-                    else Update.UpdateWrapper(major: false, minor: true);
-                    return 0;
-                }
-                catch (Exception ex) { Console.WriteLine($"❌ Update failed: {ex.Message}"); return 1; }
-            }
-            if (args.Contains("--update", StringComparer.Ordinal))
-            {
-                try
-                {
-                    if (args.Contains("--forceUpdate", StringComparer.Ordinal))
-                    {
-                        if (!args.Contains("--skipVersion", StringComparer.Ordinal)) Update.UpdateWrapper(forceUpdate: true);
-                        else Update.UpdateWrapper(forceUpdate: true, skipVersion: true);
-                    }
-                    else Update.UpdateWrapper();
-                    return 0;
-                }
-                catch (Exception ex) { Console.WriteLine($"❌ Update failed: {ex.Message}"); return 1; }
-            }
+            if (hasScan) { RepoMap.MapRepoFolderStructure(); return 0; }
             RepoMap map;
             try
             {
@@ -79,14 +55,14 @@ namespace HarmonyDebugWrapper
                 var loggerProj = Path.Combine(Path.GetDirectoryName(loggerSrc)!, "HarmonyDebugLogger.csproj");
                 if (!File.Exists(loggerProj)) throw new FileNotFoundException("❌ Harmony Debug Logger project file not found.", loggerProj);
                 Console.WriteLine("🔧 Building Harmony Debug Logger project...");
-                var (buildResultExitCode, buildResultOutput, buildResultError) = OtherHelpers.CommandRunner("dotnet", $"build \"{loggerProj}\" -c Release", streamToConsole: true, exitOnFail: false);
+                var (buildResultExitCode, buildResultOutput, buildResultError) = Update.Cmd.Run("dotnet", $"build \"{loggerProj}\" -c Release", streamToConsole: true, exitOnFail: false);
                 if (buildResultExitCode != 0) { Console.WriteLine("❌ Harmony Debug Logger build failed."); return 1; }
                 var loggerDLL = Path.Combine(Path.GetDirectoryName(loggerProj)!, "bin", "Release", "net10.0", "HarmonyDebugLogger.dll");
                 if (!File.Exists(loggerDLL)) throw new FileNotFoundException("⚠️ Harmony Debug Logger build succeeded but DLL missing", loggerDLL);
                 Console.WriteLine($"✅ Compiled Harmony Debug Logger: {loggerDLL}");
                 var cmd = $"build \"{target}\" /p:ReferencePath=\"{loggerDLL}\"";
                 Console.WriteLine($"> dotnet {cmd}");
-                OtherHelpers.CommandRunner("dotnet", cmd);
+                Update.Cmd.Run("dotnet", cmd);
                 try { if (File.Exists(loggerDLL)) File.Delete(loggerDLL); } catch { }
                 return 0;
             }

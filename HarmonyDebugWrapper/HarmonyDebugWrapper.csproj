@@ -1,14 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-	<ItemGroup>
-		<None Include="Updater\UpdateScript.ps1">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-		</None>
-		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.*" />
-		<PackageReference Include="System.Management" Version="10.*" />
-	</ItemGroup>
 	<PropertyGroup>
-		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<AssemblyName>WrapHDL</AssemblyName>
 		<Authors>GoldMike</Authors>
 		<Description>Wraps C# projects with Harmony Debug Logger for runtime instrumentation.</Description>
@@ -23,6 +14,13 @@
 		<PackageOutputPath>./bin/Release/nupkg</PackageOutputPath>
 		<TargetFramework>net10.0</TargetFramework>
 		<ToolCommandName>WrapHDL</ToolCommandName>
-		<Version>1.3.42</Version>
+		<Version>1.4.0</Version>
 	</PropertyGroup>
+	<ItemGroup>
+		<None Include="Updater\UpdateScript.ps1">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+		</None>
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.*" />
+	</ItemGroup>
 </Project>

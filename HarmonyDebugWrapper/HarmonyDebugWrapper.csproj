@@ -14,7 +14,7 @@
 		<PackageOutputPath>./bin/Release/nupkg</PackageOutputPath>
 		<TargetFramework>net10.0</TargetFramework>
 		<ToolCommandName>WrapHDL</ToolCommandName>
-		<Version>1.4.0</Version>
+		<Version>1.4.1</Version>
 	</PropertyGroup>
 	<ItemGroup>
 		<None Include="Updater\UpdateScript.ps1">

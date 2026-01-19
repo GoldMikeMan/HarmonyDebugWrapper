@@ -14,6 +14,7 @@ namespace HarmonyDebugWrapper.Updater
             bool hasUpdateMajor = args.Contains("--updateMajor", StringComparer.Ordinal);
             bool hasUpdateMinor = args.Contains("--updateMinor", StringComparer.Ordinal);
             bool hasUpdate = args.Contains("--update", StringComparer.Ordinal);
+            if ((hasUpdateMajor && hasUpdateMinor) || (hasUpdateMajor && hasUpdate) || (hasUpdateMinor && hasUpdate)) { Console.WriteLine("Only one primary argument allowed."); exitCode = 1; return true; }
             bool isUpdatePrimary = hasUpdateMajor || hasUpdateMinor || hasUpdate;
             if (!isUpdatePrimary) return false;
             bool forceUpdate = args.Contains("--forceUpdate", StringComparer.Ordinal);

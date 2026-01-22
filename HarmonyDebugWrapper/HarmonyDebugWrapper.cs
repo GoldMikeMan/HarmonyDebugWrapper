@@ -12,11 +12,8 @@ namespace HarmonyDebugWrapper
         {
             Console.InputEncoding = Encoding.UTF8;
             Console.OutputEncoding = Encoding.UTF8;
-            if (!ToolBoxHandshake.VerifyToolBoxHost()) return 1;
-            if (Update.TryHandleUpdateCommandTree(args, "WrapHDL", "HarmonyDebugWrapper.csproj", out var updateExitCode)) return updateExitCode;
             bool hasHelp = args.Contains("--help", StringComparer.Ordinal);
             bool hasScan = args.Contains("--scanFolderStructure", StringComparer.Ordinal);
-            if (hasHelp && hasScan) { Console.WriteLine("⚠️ Only one primary arg can be used at a time."); return 0; }
             if (hasHelp)
             {
                 Console.WriteLine("Commands:");
@@ -33,6 +30,9 @@ namespace HarmonyDebugWrapper
                 Console.WriteLine("  '<primary> <secondary> --skipVersion'  Do not update version number. Requires --forceUpdate arg.");
                 return 0;
             }
+            if (!ToolBoxHandshake.VerifyToolBoxHost()) return 1;
+            if (Update.TryHandleUpdateCommandTree(args, "WrapHDL", "HarmonyDebugWrapper.csproj", out var updateExitCode)) return updateExitCode;
+            if (hasHelp && hasScan) { Console.WriteLine("⚠️ Only one primary arg can be used at a time."); return 0; }
             if (hasScan) { RepoMap.MapRepoFolderStructure(); return 0; }
             RepoMap map;
             try

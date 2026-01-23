@@ -21,9 +21,9 @@ namespace HarmonyDebugWrapper
                 Console.WriteLine("Primary args:");
                 Console.WriteLine("  '--help'                               Print help to console.");
                 Console.WriteLine("  '--scanFolderStructure'                Scan repos and cache repo map.");
+                Console.WriteLine("  '--update [secondary] [tertiary]'      Increment patch version.");
                 Console.WriteLine("  '--updateMajor [secondary] [tertiary]' Increment major version.");
                 Console.WriteLine("  '--updateMinor [secondary] [tertiary]' Increment minor version.");
-                Console.WriteLine("  '--update [secondary] [tertiary]'      Increment patch version.");
                 Console.WriteLine("Secondary args:");
                 Console.WriteLine("  '<primary> --forceUpdate [tertiary]'   Force rebuild/reinstall even if nothing changed. Requires an update primary arg.");
                 Console.WriteLine("Tertiary args:");
